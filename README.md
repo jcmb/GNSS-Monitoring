@@ -8,10 +8,11 @@ The nagios directory goes somewhere in nagioss config system. It is recommended 
 
 The scripts in the root of the project shoud go in the libexec directory
 
-perl needs
+perl needs the following modules
 
 cpan install Monitoring::Plugin
-cpan install WWW::Mechanize module
+cpan install WWW::Mechanize 
+
 
 and maybe
 

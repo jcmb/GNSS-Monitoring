@@ -317,12 +317,12 @@ if ($np->opts->Clock()) {
 
    $mech->get("http://$host/prog/show?ClockSteering");
 
-   my $Clock_Reply = $np->content;
+   my $Clock_Reply = $mech->content;
    print $Clock_Reply if $np->opts->verbose>2;
    chomp($Clock_Reply);
 
 
-   my @fields = split(/\n/,$np->content);
+   my @fields = split(/\n/,$mech->content);
    if (@fields[0] =~ /^ClockSteering enable=(.*)$/) {
 #      print "@fields[0] $1\n";
       if ($1 eq $Clock) {

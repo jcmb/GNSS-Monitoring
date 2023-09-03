@@ -2,8 +2,7 @@
 # nagios: -epn
 use strict;
 
-use Nagios::Plugin;
-use Nagios::Plugin::WWW::Mechanize;
+use MonItoring::Plugin;
 use WWW::Mechanize;
 use File::Basename;
 use Data::Dumper;
@@ -13,7 +12,7 @@ use constant URL => "http://jcmbsoft.dyndns.info";
 use constant BLURB => "NAGIOS Plug in for montitoring Trimble SPS receivers, will with any modern high precision GNSS receiver with web interface with the programatic interface enabled";
 use constant EXTRA => "Extra";
 
-my $np = Nagios::Plugin::WWW::Mechanize->new(
+my $np = Monitoring::Plugin->new(
     usage => "Usage: %s [ -v|--verbose ]  [-H <host>] [-t <timeout>]  [-h Help] [ -c|--critical=<threshold> ] [ -w|--warning=<threshold> ] [ -s|--SV <SV System> ]",
     version => VERSION,
     blurb   => BLURB,
@@ -26,8 +25,8 @@ my $np = Nagios::Plugin::WWW::Mechanize->new(
 if (open (PROXY, '/usr/lib/nagios/plugins/proxy.perl')) {
 
     if (my $proxy = <PROXY>) {
-	chomp($proxy);
-	$np->mech->proxy(['http', 'ftp'], $proxy);
+    chomp($proxy);
+    $np->mech->proxy(['http', 'ftp'], $proxy);
     }
     close PROXY;
 }
@@ -65,7 +64,7 @@ $np->add_arg(
 
  $np->add_arg(
      spec => 'SV|s=s',
-     help => '-s --SV, SV System is GPS GLN or SBS',
+     help => '-s --SV, SV System is GPS, GLN, GAL, CMP (BeiBou) or SBS (Sbas)',
     );
 
 
@@ -91,13 +90,16 @@ my $warning_threshold = $opts->warning();
 my $critical_threshold= $opts->critical();
 $warning_threshold  .= ":" unless $warning_threshold =~ /:/;
 $critical_threshold .= ":" unless $critical_threshold =~ /:/;
+
+my $mech = WWW::Mechanize->new(autocheck=>0, timeout=>$np->opts->timeout());
+
 print "Host: $host\n" if $verbose>1;
 
 #print "$warning_threshold\n";
-$np->get("http://$host/prog/show?TrackingStatus");
+$mech->get("http://$host/prog/show?TrackingStatus");
 
 my $num_sv=0;
-my @fields = split(/\n/,$np->content);
+my @fields = split(/\n/,$mech->content);
 my $SV_System=$opts->SV();
 if ($SV_System) {
    for (my $i=1;$i<@fields;$i++) {

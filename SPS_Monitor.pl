@@ -294,7 +294,7 @@ if ($np->opts->Data()) { #Can't get Auto Delete so we need to get it in two part
 if ($np->opts->Battery) {
    $got_opt=1;
    $mech->get("http://$host/xml/dynamic/powerData.xml");
-   $ref = $xs->XMLin($np->content);
+   $ref = $xs->XMLin($mech->content);
 #   print Dumper($ref);
    my $battery_active = $ref->{'B1'}->{'active'};
 #   print Dumper($battery_active);

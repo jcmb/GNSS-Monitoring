@@ -5,7 +5,6 @@ use strict;
 
 use Monitoring::Plugin;
 
-#use Nagios::Plugin::WWW::Mechanize;
 use WWW::Mechanize;
 use File::Basename;
 use Data::Dumper;

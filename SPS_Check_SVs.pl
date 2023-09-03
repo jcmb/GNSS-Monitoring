@@ -2,7 +2,7 @@
 # nagios: -epn
 use strict;
 
-use MonItoring::Plugin;
+use Monitoring::Plugin;
 use WWW::Mechanize;
 use File::Basename;
 use Data::Dumper;

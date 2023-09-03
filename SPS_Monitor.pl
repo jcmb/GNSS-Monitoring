@@ -179,7 +179,7 @@ if ($np->opts->Pos()) {
    $mech->get("http://$host/prog/show?position");
 #   $ref = $xs->XMLin($np->content);
 #   $pos = $ref->{'position'}->{'soln'};
-   my @fields = split(/\n/,$np->content);
+   my @fields = split(/\n/,$mech->content);
 #   print $np->opts->Pos()."*\n";
 #   print Dumper(@fields);
 
@@ -217,15 +217,22 @@ if ($np->opts->Data()) { #Can't get Auto Delete so we need to get it in two part
    $got_opt=1;
    my $A_session_valid=0; #if at least one session is valid;
    $mech->get("http://$host/prog/show?sessions");
+
+   my $Session_Content = $mech->content;
+#   chomp($Session_Content);
+#   print Dumper($Session_Content);
+
+
    my $data_logging_enabled = 1;
-   my @fields = split(/\n/,$np->content);
-   #print Dumper(@fields);
+   my @fields = split(/\n/,$Session_Content);
+#   my @fields = split(/ /,@lines[1]);
+#   print Dumper(@fields);
    for (my $i=1;$i<@fields;$i++) {
       if (@fields[$i] =~ /^session *(.*)$/) {
 #         print "$i @fields[$i] $1\n";
          my $session_details=$1;
          my $session_valid =1;
-         if (!($session_details =~ "enabled=yes")) {
+         if (!(($session_details =~ "enable=yes")  or ($session_details =~ "enabled=yes"))) {
             print "Data Session $i is not enabled\n" if $verbose;
             $session_valid=0;
             }
@@ -235,8 +242,8 @@ if ($np->opts->Data()) { #Can't get Auto Delete so we need to get it in two part
                $session_valid=0;
                }
             else {
-               if (!($session_details =~ "durationMin=@Data_Setting[0]")) {
-                  print "Data Session $i is not @Data_Setting[0] long\n" if $verbose;
+               if (! (($session_details =~ "durationMin=@Data_Setting[0]") or ($session_details =~ "duration=@Data_Setting[0]"))) {
+                  print "Data Session $i is not @Data_Setting[0] long.\n" if $verbose;
                   $session_valid=0;
                   }
                else {
@@ -250,8 +257,8 @@ if ($np->opts->Data()) { #Can't get Auto Delete so we need to get it in two part
                         $session_valid=0;
                         }
                      else {
-                        if (!($session_details =~ "nameStyle=YYMMDDhh")) {
-                           print "Data Session $i is not using name Style YYMMDDhh\n" if $verbose;
+                        if (!($session_details =~ "nameStyle=SystemYYYYMMDDHHmm")) {
+                           print "Data Session $i is not using name Style SystemYYYYMMDDHHmm\n" if $verbose;
                            $session_valid=0;
                            };
                         };
@@ -272,9 +279,10 @@ if ($np->opts->Data()) { #Can't get Auto Delete so we need to get it in two part
       }
 
    $mech->get("http://$host/xml/dynamic/dataLogger.xml");
-   $ref = $xs->XMLin($np->content);
+   $ref = $xs->XMLin($mech->content);
 
    my $Auto_Delete = $ref ->{'fileSystem'}->{'/Internal'}->{'autoDelete'};
+#   print($Auto_Delete);
    if ($Auto_Delete ne '1') {
       $np->add_message('CRITICAL','Auto Delete not enabled.');
       }

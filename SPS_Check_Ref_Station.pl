@@ -1,8 +1,7 @@
 #! /usr/bin/perl
 use strict;
 
-use Nagios::Plugin;
-use Nagios::Plugin::WWW::Mechanize;
+use Monitoring::Plugin;
 use WWW::Mechanize;
 use File::Basename;
 use Data::Dumper;
@@ -12,7 +11,7 @@ use constant URL => "http://jcmbsoft.dyndns.info";
 use constant BLURB => "NAGIOS Plug in for montitoring Trimble SPS receivers, will with any modern high precision GNSS receiver with web interface with the programatic interface enabled";
 use constant EXTRA => "Extra";
 
-my $np = Nagios::Plugin::WWW::Mechanize->new(
+my $np = Monitoring::Plugin->new(
     usage => "Usage: %s [ -v|--verbose ]  [-H <host>] [-t <timeout>] [-U|--User User:Pass] [-h|--Help] [-l|--Latitude Latitude] [-o|--Longitude Longitude] [-z|--Height Height] [-n|--Name Name] [-c|--Code Code]",
     version => VERSION,
     blurb   => BLURB,
@@ -25,8 +24,8 @@ my $np = Nagios::Plugin::WWW::Mechanize->new(
 if (open (PROXY, '/usr/lib/nagios/plugins/proxy.perl')) {
 
     if (my $proxy = <PROXY>) {
-	chomp($proxy);
-	$np->mech->proxy(['http', 'ftp'], $proxy);
+    chomp($proxy);
+    $np->mech->proxy(['http', 'ftp'], $proxy);
     }
     close PROXY;
 }
@@ -102,12 +101,15 @@ my $message;
 print "Host: $host\n" if $verbose>1;
 
 #print "$warning_threshold\n";
-$np->get("http://$host/prog/show?RefStation");
+
+my $mech = WWW::Mechanize->new(autocheck=>0, timeout=>$np->opts->timeout());
+
+$mech->get("http://$host/prog/show?RefStation");
 
 my $had_error=0;
 $np->add_message('OK',"Latitude: $Ref_Latitude, Longitude: $Ref_Longitude, Height: $Ref_Height, Name: ". ($Ref_Name?$Ref_Name:"Not Checked"). ", Code: ". ($Ref_Code?$Ref_Code:"Not Checked"));
 
-my @fields = split(/\n/,$np->content);
+my @fields = split(/\n/,$mech->content);
 if (@fields[0] =~ /RefStation lat=(.*) lon=(.*) height=(.*) Rtcm2Id=.* Name='(.*)' Code='(.*)'$/) {
    my $Latitude=$1;
    my $Longitude=$2;

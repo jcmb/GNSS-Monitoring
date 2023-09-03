@@ -1,8 +1,7 @@
 #! /usr/bin/perl
 use strict;
 
-use Nagios::Plugin;
-use Nagios::Plugin::WWW::Mechanize;
+use Monitoring::Plugin;
 use WWW::Mechanize;
 use File::Basename;
 use Data::Dumper;
@@ -12,7 +11,7 @@ use constant URL => "http://jcmbsoft.dyndns.info";
 use constant BLURB => "NAGIOS Plug in for montitoring Trimble SPS receivers, will with any modern high precision GNSS receiver with web interface with the programatic interface enabled";
 use constant EXTRA => "Extra";
 
-my $np = Nagios::Plugin::WWW::Mechanize->new(
+my $np = Monitoring::Plugin->new(
     usage => "Usage: %s [ -v|--verbose ]  [-H <host>] [-t <timeout>]  [-h Help] [ -c|--critical=<threshold> ] [ -w|--warning=<threshold> ] ",
     version => VERSION,
     blurb   => BLURB,
@@ -25,8 +24,8 @@ my $np = Nagios::Plugin::WWW::Mechanize->new(
 if (open (PROXY, '/usr/lib/nagios/plugins/proxy.perl')) {
 
     if (my $proxy = <PROXY>) {
-	chomp($proxy);
-	$np->mech->proxy(['http', 'ftp'], $proxy);
+    chomp($proxy);
+    $np->mech->proxy(['http', 'ftp'], $proxy);
     }
     close PROXY;
 }
@@ -90,10 +89,13 @@ my $warning_threshold = $opts->warning();
 my $critical_threshold= $opts->critical();
 
 #print "$warning_threshold\n";
-$np->get("http://$host/prog/show?Temperature");
+my $mech = WWW::Mechanize->new(autocheck=>0, timeout=>$np->opts->timeout());
+
+$mech->get("http://$host/prog/show?Temperature");
+
 
 my $temp=-99;
-my @fields = split(/\n/,$np->content);
+my @fields = split(/\n/,$mech->content);
    #print Dumper(@fields);
 if (@fields[0] =~ /^Temperature temp=(.*)$/) {
 #   print "@fields[0] *$1*\n";

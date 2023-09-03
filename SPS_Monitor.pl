@@ -3,8 +3,9 @@
 
 use strict;
 
-use Nagios::Plugin;
-use Nagios::Plugin::WWW::Mechanize;
+use Monitoring::Plugin;
+
+#use Nagios::Plugin::WWW::Mechanize;
 use WWW::Mechanize;
 use File::Basename;
 use Data::Dumper;
@@ -15,7 +16,7 @@ use constant URL => "http://jcmbsoft.dyndns.info";
 use constant BLURB => "NAGIOS Plug in for montitoring Trimble SPS receivers, will with any modern high precision GNSS receiver with web interface with the programatic interface enabled";
 use constant EXTRA => "Extra";
 
-my $np = Nagios::Plugin::WWW::Mechanize->new(
+my $np = Monitoring::Plugin->new(
     usage => "Usage: %s [ -v|--verbose ]  [-H <host>] [-t <timeout>]   [-U|--User User:Pass] [-h Help] [-P|--Pos Pos_Type] [-D|--Data Data_Setting] [-B|--Battery] [-C|--Clock] [--PDOP PDOP] [--Elev Elev] [--TestMode yes|no] [--Everest yes|no] [--Motion static|kinematic]",
 
     version => VERSION,
@@ -139,17 +140,17 @@ $np->add_arg(
 );
 
 $np->getopts;
-my $opts=$np->opts;
-my $host=$opts->hostname();
-my $user=$opts->User();
+
+my $host=$np->opts->hostname();
+my $user=$np->opts->User();
 if ($user) {
    $host=$user."@".$host;
    }
-my $verbose=$opts->verbose();
+my $verbose=$np->opts->verbose();
 #print $verbose;
 my $xs = XML::Simple->new();
 #print "hello";
-my $expected_pos = $opts->Pos();
+my $expected_pos = $np->opts->Pos();
 #print "there";
 #exit;
 my $got_opt=0;
@@ -160,22 +161,27 @@ my $ref;
 my $pos;
 
 #print $expected_pos."\n";
-#print $opts->Pos()."\n";
+#print $np->opts->Pos()."\n";
+
+my $mech = WWW::Mechanize->new(autocheck=>0, timeout=>$np->opts->timeout());
+#$mech->getopts;
+
+
 print "Host: $host\n" if $verbose>1;
 
 print "Checking programatic enabled\n" if $verbose>1;
-#$np->get("http://$host/prog/show?commands");
+#$mech->get("http://$host/prog/show?commands");
 
-if ($opts->Pos()) {
+if ($np->opts->Pos()) {
    $got_opt=1;
 
    print "Checking position\n" if $verbose;
 
-   $np->get("http://$host/prog/show?position");
+   $mech->get("http://$host/prog/show?position");
 #   $ref = $xs->XMLin($np->content);
 #   $pos = $ref->{'position'}->{'soln'};
    my @fields = split(/\n/,$np->content);
-#   print $opts->Pos()."*\n";
+#   print $np->opts->Pos()."*\n";
 #   print Dumper(@fields);
 
    for (my $i=0;$i<=@fields;$i++) {
@@ -185,7 +191,7 @@ if ($opts->Pos()) {
 #         print Dumper(@pos_type);
          my $pos_types=$1;
 #	 print "type $pos_types\n";
-	 my $pos_opts = $opts->Pos();
+	 my $pos_opts = $np->opts->Pos();
 #	 print "opts $pos_opts\n";
          if ($pos_types =~ $pos_opts) {
             $np->add_message('OK',"Position type is $pos_types.");
@@ -200,8 +206,8 @@ if ($opts->Pos()) {
 
 #print "After check\n";
 
-if ($opts->Data()) { #Can't get Auto Delete so we need to get it in two parts
-   my @Data_Setting=split(/,/,$opts->Data());
+if ($np->opts->Data()) { #Can't get Auto Delete so we need to get it in two parts
+   my @Data_Setting=split(/,/,$np->opts->Data());
    @Data_Setting[1] = "1" unless defined(@Data_Setting[1]);
    @Data_Setting[2] = "1" unless defined(@Data_Setting[2]);
    @Data_Setting[1] .= ".0" unless @Data_Setting[1] =~ /\./;
@@ -211,7 +217,7 @@ if ($opts->Data()) { #Can't get Auto Delete so we need to get it in two parts
    print "Checking data: @Data_Setting[0] @Data_Setting[1] @Data_Setting[2]\n" if $verbose;
    $got_opt=1;
    my $A_session_valid=0; #if at least one session is valid;
-   $np->get("http://$host/prog/show?sessions");
+   $mech->get("http://$host/prog/show?sessions");
    my $data_logging_enabled = 1;
    my @fields = split(/\n/,$np->content);
    #print Dumper(@fields);
@@ -266,7 +272,7 @@ if ($opts->Data()) { #Can't get Auto Delete so we need to get it in two parts
       $np->add_message('OK','Data Logging is configured correctly.');
       }
 
-   $np->get("http://$host/xml/dynamic/dataLogger.xml");
+   $mech->get("http://$host/xml/dynamic/dataLogger.xml");
    $ref = $xs->XMLin($np->content);
 
    my $Auto_Delete = $ref ->{'fileSystem'}->{'/Internal'}->{'autoDelete'};
@@ -278,9 +284,9 @@ if ($opts->Data()) { #Can't get Auto Delete so we need to get it in two parts
       }
    };
 
-if ($opts->Battery) {
+if ($np->opts->Battery) {
    $got_opt=1;
-   $np->get("http://$host/xml/dynamic/powerData.xml");
+   $mech->get("http://$host/xml/dynamic/powerData.xml");
    $ref = $xs->XMLin($np->content);
 #   print Dumper($ref);
    my $battery_active = $ref->{'B1'}->{'active'};
@@ -296,16 +302,16 @@ if ($opts->Battery) {
    }
 }
 
-if ($opts->Clock()) {
+if ($np->opts->Clock()) {
    $got_opt=1;
 
    print "Checking ClockSteering\n" if $verbose;
-   my $Clock = $opts->Clock();
+   my $Clock = $np->opts->Clock();
 
-   $np->get("http://$host/prog/show?ClockSteering");
+   $mech->get("http://$host/prog/show?ClockSteering");
 
    my $Clock_Reply = $np->content;
-   print $Clock_Reply if $opts->verbose>2;
+   print $Clock_Reply if $np->opts->verbose>2;
    chomp($Clock_Reply);
 
 
@@ -325,15 +331,15 @@ if ($opts->Clock()) {
       }
    }
 
-if ($opts->PDOP()) {
+if ($np->opts->PDOP()) {
    $got_opt=1;
 
    print "Checking PDOP\n" if $verbose;
 
-   $np->get("http://$host/prog/show?PdopMask");
+   $mech->get("http://$host/prog/show?PdopMask");
    my $PDOP_Reply = $np->content;
    chomp($PDOP_Reply);
-   my $PDOP = $opts->PDOP();
+   my $PDOP = $np->opts->PDOP();
 
    if ($PDOP_Reply =~ /^PdopMask mask=/) {
       if ($PDOP_Reply =~ /^PdopMask mask=$PDOP/) {
@@ -350,14 +356,14 @@ if ($opts->PDOP()) {
       }
    }
 
-if ($opts->Elev()) {
+if ($np->opts->Elev()) {
    $got_opt=1;
 
-   my $Elev = $opts->Elev();
+   my $Elev = $np->opts->Elev();
    print "Checking Elevation is $Elev\n" if $verbose;
 
-   $np->get("http://$host/prog/show?ElevationMask");
-   my $Elev_Reply = $np->content;
+   $mech->get("http://$host/prog/show?ElevationMask");
+   my $Elev_Reply = $mech->content;
    print $Elev_Reply if $verbose>2;
    chomp($Elev_Reply);
 
@@ -376,14 +382,14 @@ if ($opts->Elev()) {
       }
    }
 
-if ($opts->TestMode()) {
+if ($np->opts->TestMode()) {
    $got_opt=1;
-   my $Test = $opts->TestMode();
+   my $Test = $np->opts->TestMode();
    print "Checking Test Mode is $Test\n" if $verbose;
 
-   $np->get("http://$host/prog/show?TestMode");
-   my $Test_Reply = $np->content;
-   print $Test_Reply if $opts->verbose>2;
+   $mech->get("http://$host/prog/show?TestMode");
+   my $Test_Reply = $mech->content;
+   print $Test_Reply if $np->opts->verbose>2;
    chomp($Test_Reply);
 
    if ($Test_Reply =~ /^testMode enable=/) {
@@ -403,15 +409,15 @@ if ($opts->TestMode()) {
       }
    }
 
-if ($opts->Everest()) {
+if ($np->opts->Everest()) {
    $got_opt=1;
 
    print "Checking Everest\n" if $verbose;
 
-   $np->get("http://$host/prog/show?MultipathReject");
-   my $Everest_Reply = $np->content;
+   $mech->get("http://$host/prog/show?MultipathReject");
+   my $Everest_Reply = $mech->content;
    chomp($Everest_Reply);
-   my $Everest = $opts->Everest();
+   my $Everest = $np->opts->Everest();
 
    if ($Everest_Reply =~ /^MultipathReject enable=/) {
       if ($Everest_Reply =~ /^MultipathReject enable=$Everest/) {
@@ -428,15 +434,15 @@ if ($opts->Everest()) {
       }
    }
 
-if ($opts->Motion()) {
+if ($np->opts->Motion()) {
    $got_opt=1;
 
    print "Checking Motion\n" if $verbose;
 
-   $np->get("http://$host/prog/show?RtkControls");
-   my $Motion_Reply = $np->content;
+   $mech->get("http://$host/prog/show?RtkControls");
+   my $Motion_Reply = $mech->content;
    chomp($Motion_Reply);
-   my $Motion = $opts->Motion();
+   my $Motion = $np->opts->Motion();
 
    if ($Motion_Reply =~ /motion=/) {
       if ($Motion_Reply =~ /motion=$Motion/) {

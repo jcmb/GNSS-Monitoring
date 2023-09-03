@@ -1,8 +1,7 @@
 #! /usr/bin/perl
 use strict;
 
-use Nagios::Plugin;
-use Nagios::Plugin::WWW::Mechanize;
+use Monitoring::Plugin;
 use WWW::Mechanize;
 use File::Basename;
 use Data::Dumper;
@@ -12,7 +11,7 @@ use constant URL => "http://jcmbsoft.dyndns.info";
 use constant BLURB => "NAGIOS Plug in for montitoring Trimble SPS receivers, will with any modern high precision GNSS receiver with web interface with the programatic interface enabled";
 use constant EXTRA => "Extra";
 
-my $np = Nagios::Plugin::WWW::Mechanize->new(
+my $np = Monitoring::Plugin->new(
     usage => "Usage: %s [ -v|--verbose ]  [-H <host>] [-t <timeout>] [-U|--User User:Pass] [-h Help] [ -c|--critical=<threshold> ] [ -w|--warning=<threshold> ] [ -p|--port Power_Port ]",
     version => VERSION,
     blurb   => BLURB,
@@ -86,15 +85,18 @@ $critical_threshold .= ":" unless $critical_threshold =~ /:/;
 print "Host: $host\n" if $verbose>1;
 
 #print "$warning_threshold\n";
-$np->get("http://$host/prog/show?Voltages");
+my $mech = WWW::Mechanize->new(autocheck=>0, timeout=>$np->opts->timeout());
 
+$mech->get("http://$host/prog/show?Voltages");
+
+#print($mech->content);
 my $volts=-1;
-my @fields = split(/\n/,$np->content);
-my $port=$opts->port()+1;
-print "@fields[$port]\n";
+my @fields = split(/\n/,$mech->content);
+my $port=$opts->port();
+#print "@fields[$port+1]\n";
 
-if (@fields[$port] =~ /volts=(.*)$/) {
-   print "$port @fields[$port] $1\n";
+if (@fields[$port+1] =~ /volts=([\.\d]*)/) {
+#   print "$port @fields[$port] $1\n";
    $volts=$1;
    }
 

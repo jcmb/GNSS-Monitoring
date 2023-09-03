@@ -344,7 +344,7 @@ if ($np->opts->PDOP()) {
    print "Checking PDOP\n" if $verbose;
 
    $mech->get("http://$host/prog/show?PdopMask");
-   my $PDOP_Reply = $np->content;
+   my $PDOP_Reply = $mech->content;
    chomp($PDOP_Reply);
    my $PDOP = $np->opts->PDOP();
 

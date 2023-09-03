@@ -12,7 +12,7 @@ perl needs the following modules
 
 cpan install Monitoring::Plugin
 cpan install WWW::Mechanize 
-
+cpan install XML::Simple
 
 and maybe
 

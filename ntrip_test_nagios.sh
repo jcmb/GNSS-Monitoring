@@ -24,9 +24,10 @@ cd "$script_dir"
 # You can perform actions in this directory
 
 
-if [ -z $6 ]
+if [ -z $7 ]
 then
     echo "Unknown - Usage: Test_Time server port USER PASS BASE FORMAT"
+    echo "Format is CMR or RTCM3"
     exit 3
 fi
 
@@ -35,8 +36,6 @@ command -v DCOL_Count.py &>/dev/null || {  echo  "Unknown - DCOL_Count.py is req
 
 
 TEST_TIME=$1
-TEST_OK=`expr $TEST_TIME \* 2  \* 9 / 10`
-TEST_WARN=`expr $TEST_TIME \* 2 \* 7 / 10`
 
 #echo $TEST_OK
 #echo $TEST_WARN
@@ -46,7 +45,7 @@ PORT=$3
 USER=$4
 PASS=$5
 BASE=$6
-#FORMAT=$7
+FORMAT=$7
 NTRIP_SERVER=$SERVER:$PORT
 
 
@@ -63,34 +62,68 @@ st_size1=$(stat -c%s /tmp/ntrip_$$.bin 2>/dev/null )
 st_size2=$(stat -f%z /tmp/ntrip_$$.bin 2>/dev/null )
 st_size=$st_size1$st_size2
 
-#echo $Result,$st_size, $(expr $AFTER - $BEFORE),$CONNECTIONS >>ntrip_results.txt
-RECORDS=$(cat /tmp/ntrip_$$.bin | DCOL_Count.py )
-#echo $RECORDS
+if [ "$FORMAT" == "CMR" ] || [ "$FORMAT" == "CMR+" ] || [ "$FORMAT" == "CMRx" ] ; then
+    TEST_OK=`expr $TEST_TIME \* 2  \* 9 / 10`
+    TEST_WARN=`expr $TEST_TIME \* 2 \* 7 / 10`
 
-text="Received $RECORDS during test of $TEST_TIME ($Result:$st_size::$$)"
+    #echo $Result,$st_size, $(expr $AFTER - $BEFORE),$CONNECTIONS >>ntrip_results.txt
+    RECORDS=$(cat /tmp/ntrip_$$.bin | DCOL_Count.py )
+    #echo $RECORDS
 
-if [ $RECORDS -ge  $TEST_OK ]
-then
-   text="OK - $text"
-   rc=0
-#   if [ $FORMAT = "CMR" ]
-#   then
-#   BASE_RECORDS=$(DCOL_count -i /tmp/ibss_$$.bin --CMRb)
-#   if [ $BASE_RECORDS -eq 0 ]
-#      then
-#      text="ERROR - Base is not sending base information records"
-#      rc=2
-#      fi
-#   fi
+    text="Received CMR family $RECORDS during test of $TEST_TIME ($Result:$st_size::$$)"
+
+    if [ $RECORDS -ge  $TEST_OK ]
+    then
+       text="OK - $text"
+       rc=0
+    #   if [ $FORMAT = "CMR" ]
+    #   then
+    #   BASE_RECORDS=$(DCOL_count -i /tmp/ibss_$$.bin --CMRb)
+    #   if [ $BASE_RECORDS -eq 0 ]
+    #      then
+    #      text="ERROR - Base is not sending base information records"
+    #      rc=2
+    #      fi
+    #   fi
+    else
+       if [ $RECORDS -ge $TEST_WARN ]
+       then
+          text="WARNING - $text"
+          rc=1
+       else
+          text="ERROR - $text"
+          rc=2
+       fi
+    fi
 else
-   if [ $RECORDS -ge $TEST_WARN ]
-   then
-      text="WARNING - $text"
-      rc=1
-   else
-      text="ERROR - $text"
-      rc=2
-   fi
+    TEST_OK=`expr $TEST_TIME \* 300  \* 9 / 10`  #Assume at least 300 bytes a second for RTCM3
+    TEST_WARN=`expr $TEST_TIME \* 300 \* 7 / 10`
+    text="Received $st_size bytes during test of $TEST_TIME ($Result:$st_size::$$)"
+
+    if [ $st_size -ge  $TEST_OK ]
+    then
+       text="OK - $text"
+       rc=0
+    #   if [ $FORMAT = "CMR" ]
+    #   then
+    #   BASE_RECORDS=$(DCOL_count -i /tmp/ibss_$$.bin --CMRb)
+    #   if [ $BASE_RECORDS -eq 0 ]
+    #      then
+    #      text="ERROR - Base is not sending base information records"
+    #      rc=2
+    #      fi
+    #   fi
+    else
+       if [ $st_size -ge $TEST_WARN ]
+       then
+          text="WARNING - $text"
+          rc=1
+       else
+          text="ERROR - $text"
+          rc=2
+       fi
+    fi
+
 fi
 
 echo $text

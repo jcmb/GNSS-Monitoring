@@ -55,6 +55,13 @@ Result=$?
 AFTER="$(date +%s)"
 elapsed_seconds="$(expr $AFTER - $BEFORE)"
 
+
+if [ "$Result" == "22" ]
+then
+   echo = "ERROR - Failed to login"
+   exit 2
+fi
+
 filename=/tmp/ntrip_$$.bin
 
 #Macos has a different stat command for file size. Run both

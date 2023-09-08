@@ -58,7 +58,7 @@ elapsed_seconds="$(expr $AFTER - $BEFORE)"
 
 if [ "$Result" == "22" ]
 then
-   echo = "ERROR - Failed to login"
+   echo "ERROR - Failed to login"
    exit 2
 fi
 

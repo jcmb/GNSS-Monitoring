@@ -211,7 +211,7 @@ class Dcol:
                                 if (packet_length != 0) :
                                     self.data = self.buffer [TrimComm_First_Data_Location +Long_Packet_Adjustment : TrimComm_First_Data_Location + packet_length]
                                 else :
-                                    self.data = bytearray("");
+                                    self.data = bytearray();
 
                                 del self.buffer[0:packet_length + TrimComm_End_Location+1+Long_Packet_Adjustment]
 
@@ -340,7 +340,6 @@ class Dcol:
         except:
             pass
 
-    #        self._add_Handler(AppFile_TrimComm_Command,AppFile.AppFile())
         try:
             self._add_Handler(CMRW_TrimComm_Command,CMRGlonass.CMRGlonass())
         except:
@@ -349,6 +348,7 @@ class Dcol:
 
         if internal : # If you are doing it internal we assume you have all the files
 
+            self._add_Handler(AppFile_TrimComm_Command,AppFile.AppFile())
             self._add_Handler(Station_TrimComm_Command,Station.Station());
             self._add_Handler(RTKSTAT_TrimComm_Command,RTKStat.RTKStat());
             self._add_Handler(RETRTKSTAT_TrimComm_Command,RetRTKStat.RetRTKStat());
@@ -416,12 +416,14 @@ class Dcol:
                     print("")
                 else :
                     print((" Dont have a decoder for packet: " + hex (self.packet_ID) + " Length " + str(len(self.packet))))
-                    if dump_undecoded :
-                        print((" Packet Data: " + ByteToHex (self.packet)))
+#                    if dump_undecoded :
+                    print((" Packet Data: " + ByteToHex (self.packet)))
                     print("")
 
 
-verbose=False
+verbose=True
+
+import RetStat1
 
 try:
     import RetStat1
@@ -494,14 +496,14 @@ except:
     if verbose: sys.stderr.write("INFO: Failed to load RetOpt\n")
 
 try:
+    import GetOpt
+except:
+    if verbose: sys.stderr.write("INFO: Failed to load GetOpt\n")
+
+try:
     import RetBreak
 except:
     if verbose: sys.stderr.write("INFO: Failed to load RetBreak\n")
-
-try:
-    import GetOpt
-except:
-    if verbose: sys.stderr.write("INFO: Failed to load GeTOpt\n")
 
 try:
     import SurveyStat
@@ -568,6 +570,8 @@ try:
 except:
     if verbose: sys.stderr.write("INFO: Failed to load CMRGlonass\n")
 
+import GetSVData
+
 try:
     import GetSVData
 except:
@@ -592,5 +596,10 @@ try:
     import ReqAppFile
 except:
     if verbose: sys.stderr.write("INFO: Failed to load ReqAppFile\n")
+
+try:
+    import AppFile
+except:
+    if verbose: sys.stderr.write("INFO: Failed to load AppFile\n")
 
     #import AppFile

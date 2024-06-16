@@ -81,10 +81,12 @@ TSV_System_Names = (
    'GLONASS',
    'Galileo',
    'QZSS',
-   'Compass (pre-ICD SV numbering)',
+   'Compass (pre-ICD SV numbering, Obsolete)',
    'OmniStar',
-   'Compass (ICD SV numbering)',
-   'Terralite XPS'
+   'Compass (ICD SV numbering, Obsolete)',
+   'Terralite XPS',
+   'IRNSS',
+   'Beidou'
    )
 
 TPort_Names = (
@@ -155,26 +157,13 @@ class Trimcomm_Command_Names:
         self.Command_Names[CMR_Type_TrimComm_Command] = 'CMR'
         self.Command_Names[CMR_PLUS_TrimComm_Command] = 'CMR+'
         self.Command_Names[CMRW_TrimComm_Command] = 'GLONASS CMR'
-        
+
 
     def name (self,packet_ID):
         return self.Command_Names[packet_ID]
 
     def add_name (self,packet_ID,name):
         self.Command_Names[packet_ID]=name;
-
-
-TSV_System_Names = (
-   'GPS',
-   'SBAS (WAAS, EGNOS, MSAS etc)',
-   'GLONASS',
-   'Galileo',
-   'QZSS',
-   'Compass (pre-ICD SV numbering)',
-   'OmniStar',
-   'Compass (ICD SV numbering)',
-   'Terralite XPS'
-   )
 
 
 
@@ -196,8 +185,8 @@ Non_Reply_Commands = set ([
     CMR_Type_TrimComm_Command,
     CMR_PLUS_TrimComm_Command
     ])
-    
-    
+
+
 TMotion_Names= (
    'Unknown 0',
    'Static',
